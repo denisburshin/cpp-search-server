@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-//Оставил только потому, что не проходит тест в тренажере
+//Оставил только потому, что без этого не проходит тест в тренажере
 using namespace std;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
