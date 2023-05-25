@@ -415,25 +415,19 @@ void TestDocumentExistence()
 
 void TestMinusWordsExclusion()
 {
-    const int doc_id = 3;
-    const std::string content = "cat in the city"s;
-    const std::vector<int> ratings = { 1, 2, 3 };
+    SearchServer search_server;
+    search_server.SetStopWords("and in on"s);
+    search_server.AddDocument(0, "white cat and nice collar"s, DocumentStatus::ACTUAL, { 8, -3 });
+    search_server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+    search_server.AddDocument(2, "well-groomed dog expressive eyes"s, DocumentStatus::REMOVED, { 5, -12, 2, 1 });
+    search_server.AddDocument(3, "well-groomed starling evgeny"s, DocumentStatus::BANNED, { 9 });
 
-    SearchServer server;
-    server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-
-    // Проверяем, что поиск по-прежнему работает для документов с минус-словами
-    {
-        const auto found_docs = server.FindTopDocuments("cat"s);
-        ASSERT(found_docs.size() == 1);
-        ASSERT(found_docs[0].id == 3);
-    }
 
     // Проверяем, что минус-слова исключаются
-    {
-        const auto found_docs = server.FindTopDocuments("-city"s);
-        ASSERT(found_docs.size() == 0);
-    }
+    
+    const auto found_docs = search_server.FindTopDocuments("cat -nice"s);
+    ASSERT(found_docs.size() == 1);
+    ASSERT(found_docs[0].id == 1);
 }
 
 void TestDocumentMatching()
@@ -474,7 +468,7 @@ void TestAverageRating()
     const std::string query = "cat";
     auto docs = server.FindTopDocuments(query);
     
-    ASSERT(docs[0].rating == 2);
+    ASSERT(docs[0].rating == (1 + 2 + 3) / 3);
 }
 
 void TestRelevanceSort()
@@ -490,7 +484,7 @@ void TestRelevanceSort()
 
     ASSERT(documents.size() != 0);
 
-    for (size_t i = 1; i < documents.size() - 1; ++i)
+    for (size_t i = 1; i < documents.size(); ++i)
         ASSERT(documents[i].relevance > documents[i - 1].relevance);
 
 }
@@ -532,14 +526,14 @@ void TestRelevancyAccuracy()
     search_server.AddDocument(0, "white cat and nice collar"s, DocumentStatus::ACTUAL, { 8, -3 });
     search_server.AddDocument(1, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
 
-    const double relevance_id0 = 0.173287;
-    const double relevance_id1 = 0.866434;
+    const double relevance_id0 = log(search_server.GetDocumentCount() * 1.0 / 1) * (1.0 / 4);
+    const double relevance_id1 = log(search_server.GetDocumentCount() * 1.0 / 1) * (2.0 / 4);
 
-    const auto& docs = search_server.FindTopDocuments("fluffy well-groomed cat"s);
+    const auto& docs = search_server.FindTopDocuments("fluffy white cat"s);
 
     ASSERT(docs.size() == 2);
-    ASSERT(docs[0].relevance - relevance_id1 < EPSILON);
-    ASSERT(docs[1].relevance - relevance_id0 < EPSILON);
+    ASSERT(abs(docs[0].relevance - relevance_id1) < EPSILON);
+    ASSERT(abs(docs[1].relevance - relevance_id0) < EPSILON);
 }
 
 void TestUserPredicate()
