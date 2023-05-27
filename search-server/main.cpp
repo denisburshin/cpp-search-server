@@ -129,7 +129,7 @@ public:
         }
 
         documents_.emplace(document_id, DocumentData{ ComputeAverageRating(ratings), status });
-        documents_id.push_back(document_id);
+        documents_id_.push_back(document_id);
     }
 
     std::vector<Document> FindTopDocuments(const std::string& raw_query, const DocumentStatus status) const
@@ -200,16 +200,9 @@ public:
         return { matched_words, documents_.at(document_id).status };
     }
 
-    int GetDocumentId(int index) const
+    inline int GetDocumentId(int index) const
     {
-        //if (index < 0 || index > GetDocumentCount())
-        //    throw std::out_of_range("Index " + std::to_string(index) + " out of range");
-        //
-        //auto it = documents_.begin();
-        //std::advance(it, index);
-        //return it->first;
-
-        return documents_id.at(index);
+        return documents_id_.at(index);
     }
 
 private:
@@ -222,7 +215,7 @@ private:
     std::set<std::string> stop_words_;
     std::map<std::string, std::map<int, double>> word_to_document_freqs_;
     std::map<int, DocumentData> documents_;
-    std::vector<int> documents_id;
+    std::vector<int> documents_id_;
 
     inline bool IsStopWord(const std::string& word) const
     {
