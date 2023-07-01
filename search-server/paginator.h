@@ -27,7 +27,8 @@ public:
     }
 
 private:
-    Iterator begin_, end_;
+    Iterator begin_;
+    Iterator end_;
 };
 
 template <class Iterator>
@@ -44,7 +45,6 @@ class Paginator
 {
 public:
     Paginator(Iterator begin, Iterator end, size_t page_size)
-        : page_size_(page_size)
     {
         auto it = begin;
         while (it != end)
@@ -72,7 +72,6 @@ public:
     }
 private:
     std::vector<Page<Iterator>> pages_;
-    size_t page_size_;
 };
 
 template <class Container>
