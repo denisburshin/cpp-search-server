@@ -20,10 +20,11 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
             throw std::invalid_argument("Word " + word + " has forbidden symbols in document " + std::to_string(document_id));
 
         word_to_document_freqs_[word][document_id] += inv_word_count;
+        id_to_word_freqs_[document_id][word] += inv_word_count;
     }
 
     documents_.emplace(document_id, DocumentData{ ComputeAverageRating(ratings), status });
-    documents_id_.push_back(document_id);
+    documents_id_.insert(document_id);
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, const DocumentStatus status) const
@@ -124,12 +125,37 @@ SearchServer::Query SearchServer::ParseQuery(const std::string& text) const
     return query;
 }
 
+const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const
+{
+    if (id_to_word_freqs_.count(document_id))
+        return id_to_word_freqs_.at(document_id);
+
+    static std::map<std::string, double> dummy;
+
+    return dummy;
+}
+
 double SearchServer::ComputeWordInverseDocumentFreq(const std::string& word) const
 {
     return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
 }
 
-bool SearchServer::IsValidWord(const std::string& word) 
+void SearchServer::RemoveDocument(int document_id)
+{
+    documents_.erase(document_id);
+    documents_id_.erase(document_id);
+
+    if (id_to_word_freqs_.count(document_id))
+    {
+        for (const auto& [word, _] : id_to_word_freqs_.at(document_id))
+            if (word_to_document_freqs_.count(word))
+                word_to_document_freqs_[word].erase(document_id);
+    }
+
+    id_to_word_freqs_.erase(document_id);
+}
+
+bool SearchServer::IsValidWord(const std::string& word)
 {
     // A valid word must not contain special characters
     return std::none_of(word.begin(), word.end(),
